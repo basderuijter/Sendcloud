@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   const auth = Buffer.from(`${publicKey}:${secretKey}`).toString('base64');
 
   try {
-    const response = await fetch(`https://service-point.sendcloud.sc/api/v2/service-points?postal_code=${postal_code}&country=${country}&carrier=${carrier}`, {
+    const response = await fetch(`https://api.sendcloud.dev/v2/service-points/api/v2/service-points?postal_code=${postal_code}&country=${country}&carrier=${carrier}`, {
       headers: {
         Authorization: `Basic ${auth}`,
         Accept: 'application/json',
