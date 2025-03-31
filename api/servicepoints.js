@@ -1,26 +1,30 @@
 export default async function handler(req, res) {
-  const { postal_code, country, carrier } = req.query;
+  const { address, country, carrier } = req.query;
 
-  if (!postal_code || !country || !carrier) {
-    return res.status(400).json({ error: 'postal_code, country en carrier zijn verplicht' });
+  if (!address || !country) {
+    return res.status(400).json({ error: 'address en country zijn verplicht' });
   }
 
-  const publicKey = process.env.SENDCLOUD_PUBLIC_KEY;
-  const secretKey = process.env.SENDCLOUD_SECRET_KEY;
+  const accessToken = process.env.SENDCLOUD_ACCESS_TOKEN;
+  const bearerToken = process.env.SENDCLOUD_BEARER_TOKEN;
 
-  if (!publicKey || !secretKey) {
-    return res.status(500).json({ error: 'API-sleutels niet ingesteld in environment variables.' });
+  if (!accessToken || !bearerToken) {
+    return res.status(500).json({ error: 'API tokens niet ingesteld in environment variables.' });
   }
 
-  const auth = Buffer.from(`${publicKey}:${secretKey}`).toString('base64');
+  const url = new URL('https://servicepoints.sendcloud.sc/api/v2/service-points');
+  url.searchParams.set('country', country);
+  url.searchParams.set('address', address);
+  url.searchParams.set('access_token', accessToken);
+  if (carrier) url.searchParams.set('carrier', carrier);
 
   try {
-    const response = await fetch(`https://servicepoints.sendcloud.sc/api/v2/service-points?postal_code=${postal_code}&country=${country}&carrier=${carrier}`, {
-  headers: {
-    Authorization: `Basic ${auth}`,
-    Accept: 'application/json',
-  },
-});
+    const response = await fetch(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${bearerToken}`,
+        Accept: 'application/json',
+      },
+    });
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -29,7 +33,7 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
-    return res.status(200).json(data.service_points || data);
+    return res.status(200).json(data);
   } catch (err) {
     console.error('Fetch fout:', err);
     return res.status(500).json({ error: 'Interne fout', details: err.message });
